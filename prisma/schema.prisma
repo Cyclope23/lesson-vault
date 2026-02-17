@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum ProgramStatus {
+  DRAFT
+  PARSING
+  PARSED
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum TopicStatus {
+  PENDING
+  GENERATING
+  GENERATED
+  FAILED
+}
+
+enum LessonStatus {
+  GENERATING
+  FAILED
+  DRAFT
+  REVIEWING
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ApprovalStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentStatus {
+  UPLOADED
+  EXTRACTING
+  EXTRACTED
+  FAILED
+}
+
+enum ContentType {
+  LEZIONE
+  VERIFICA_SCRITTA
+  ESERCIZIO_RISPOSTA_MULTIPLA
+  ESERCIZIO_RISPOSTA_APERTA
+  ESERCITAZIONE_LABORATORIO
+  COMPITO_IN_CLASSE
+  APPROFONDIMENTO
+}
+
+model User {
+  id               String     @id @default(cuid())
+  email            String     @unique
+  passwordHash     String
+  firstName        String
+  lastName         String
+  role             Role       @default(TEACHER)
+  status           UserStatus @default(PENDING)
+  anthropicApiKey  String?
+  apiKeyConfigured Boolean    @default(false)
+
+  disciplineId String?
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+
+  programs    Program[]
+  lessons     Lesson[]
+  documents   Document[]
+  aiUsageLogs AiUsageLog[]
+
+  approvedPrograms Program[] @relation("ApprovedPrograms")
+  approvedLessons  Lesson[]  @relation("ApprovedLessons")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Discipline {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  color       String?
+  icon        String?
+
+  teachers  User[]
+  programs  Program[]
+  lessons   Lesson[]
+  documents Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("disciplines")
+}
+
+model Program {
+  id         String        @id @default(cuid())
+  title      String
+  schoolYear String
+  className  String    @default("")
+  status     ProgramStatus @default(DRAFT)
+  rawContent String?
+
+  visibility      Visibility     @default(PRIVATE)
+  approvalStatus  ApprovalStatus @default(NONE)
+  rejectionReason String?
+  approvedById    String?
+  approvedBy      User?          @relation("ApprovedPrograms", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+
+  teacherId    String
+  teacher      User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
+
+  modules Module[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("programs")
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  order       Int
+
+  programId String
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  topics Topic[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("modules")
+}
+
+model Topic {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  status      TopicStatus @default(PENDING)
+  contentType ContentType @default(LEZIONE)
+
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  lessonId String? @unique
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("topics")
+}
+
+model Lesson {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  className   String?
+  status      LessonStatus @default(DRAFT)
+  contentType ContentType  @default(LEZIONE)
+  content     Json
+  failureReason String?
+  aiModelUsed   String?
+
+  visibility      Visibility     @default(PRIVATE)
+  approvalStatus  ApprovalStatus @default(NONE)
+  rejectionReason String?
+  approvedById    String?
+  approvedBy      User?          @relation("ApprovedLessons", fields: [approvedById], references: [id])
+  approvedAt      DateTime?
+
+  teacherId    String
+  teacher      User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
+
+  topic Topic?
+
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("lessons")
+}
+
+model Document {
+  id            String         @id @default(cuid())
+  originalName  String
+  storagePath   String
+  mimeType      String
+  fileSize      Int
+  status        DocumentStatus @default(UPLOADED)
+  extractedText String?
+
+  teacherId    String
+  teacher      User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("documents")
+}
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+model AiUsageLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String
+  operation String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("ai_usage_logs")
+}

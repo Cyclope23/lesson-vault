@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -14,19 +16,23 @@ export default async function LessonsPage() {
   const lessons = await prisma.lesson.findMany({
     where: contentVisibilityFilter(userId, role),
     include: {
-      teacher: { select: { firstName: true, lastName: true } },
-      discipline: { select: { name: true } },
+      teacher: { select: { id: true, firstName: true, lastName: true } },
+      discipline: { select: { id: true, name: true } },
     },
     orderBy: { updatedAt: "desc" },
   });
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Tutte le lezioni</h1>
+      <h1 className="text-2xl font-bold">Lezioni</h1>
       <p className="mt-2 mb-6 text-muted-foreground">
-        Esplora le lezioni pubblicate e le tue lezioni private.
+        Gestisci e consulta le lezioni.
       </p>
-      <LessonsClient lessons={JSON.parse(JSON.stringify(lessons))} />
+      <LessonsClient
+        lessons={JSON.parse(JSON.stringify(lessons))}
+        currentUserId={userId}
+        role={role}
+      />
     </div>
   );
 }

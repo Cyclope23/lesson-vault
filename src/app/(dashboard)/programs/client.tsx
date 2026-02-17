@@ -45,22 +45,23 @@ interface ProgramItem {
   id: string;
   title: string;
   schoolYear: string;
+  className: string;
   status: string;
   visibility: string;
   approvalStatus: string;
   rejectionReason: string | null;
   updatedAt: string;
-  teacher: { firstName: string; lastName: string };
+  teacher: { id: string; firstName: string; lastName: string };
   discipline: { name: string };
   _count: { modules: number };
 }
 
 interface ProgramsClientProps {
   programs: ProgramItem[];
-  isOwner: boolean;
+  currentUserId: string;
 }
 
-export function ProgramsClient({ programs, isOwner }: ProgramsClientProps) {
+export function ProgramsClient({ programs, currentUserId }: ProgramsClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -92,59 +93,72 @@ export function ProgramsClient({ programs, isOwner }: ProgramsClientProps) {
         <TableRow>
           <TableHead>Titolo</TableHead>
           <TableHead>Anno</TableHead>
+          <TableHead>Classe</TableHead>
           <TableHead>Disciplina</TableHead>
-          {!isOwner && <TableHead>Docente</TableHead>}
+          <TableHead>Docente</TableHead>
           <TableHead>Stato</TableHead>
           <TableHead>Visibilità</TableHead>
           <TableHead>Approvazione</TableHead>
           <TableHead>Moduli</TableHead>
           <TableHead>Data</TableHead>
-          {isOwner && <TableHead className="text-right">Azioni</TableHead>}
+          <TableHead className="text-right">Azioni</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {programs.map((program) => (
-          <TableRow key={program.id}>
-            <TableCell className="font-medium">{program.title}</TableCell>
-            <TableCell>{program.schoolYear}</TableCell>
-            <TableCell>{program.discipline.name}</TableCell>
-            {!isOwner && (
+        {programs.map((program) => {
+          const isOwner = program.teacher.id === currentUserId;
+          return (
+            <TableRow
+              key={program.id}
+              className="cursor-pointer"
+              onClick={() => isOwner && router.push(`/programs/${program.id}`)}
+            >
+              <TableCell className="font-medium">
+                {isOwner ? (
+                  <span className="text-primary hover:underline">{program.title}</span>
+                ) : (
+                  program.title
+                )}
+              </TableCell>
+              <TableCell>{program.schoolYear}</TableCell>
+              <TableCell>{program.className}</TableCell>
+              <TableCell>{program.discipline.name}</TableCell>
               <TableCell>
                 {program.teacher.firstName} {program.teacher.lastName}
               </TableCell>
-            )}
-            <TableCell>
-              <ProgramStatusBadge status={program.status} />
-            </TableCell>
-            <TableCell>
-              <VisibilityBadge visibility={program.visibility} />
-            </TableCell>
-            <TableCell>
-              <div className="flex flex-col gap-1">
-                <ApprovalStatusBadge status={program.approvalStatus} />
-                {program.approvalStatus === "REJECTED" && program.rejectionReason && (
-                  <span className="text-xs text-red-600">
-                    {program.rejectionReason}
-                  </span>
-                )}
-              </div>
-            </TableCell>
-            <TableCell>{program._count.modules}</TableCell>
-            <TableCell>
-              {new Date(program.updatedAt).toLocaleDateString("it-IT")}
-            </TableCell>
-            {isOwner && (
-              <TableCell className="text-right">
-                <ProgramActions
-                  program={program}
-                  isPending={isPending}
-                  onRequestPublication={handleRequestPublication}
-                  onSetPrivate={handleSetPrivate}
-                />
+              <TableCell>
+                <ProgramStatusBadge status={program.status} />
               </TableCell>
-            )}
-          </TableRow>
-        ))}
+              <TableCell>
+                <VisibilityBadge visibility={program.visibility} />
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-1">
+                  <ApprovalStatusBadge status={program.approvalStatus} />
+                  {program.approvalStatus === "REJECTED" && program.rejectionReason && (
+                    <span className="text-xs text-red-600">
+                      {program.rejectionReason}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>{program._count.modules}</TableCell>
+              <TableCell>
+                {new Date(program.updatedAt).toLocaleDateString("it-IT")}
+              </TableCell>
+              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                {isOwner && (
+                  <ProgramActions
+                    program={program}
+                    isPending={isPending}
+                    onRequestPublication={handleRequestPublication}
+                    onSetPrivate={handleSetPrivate}
+                  />
+                )}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
