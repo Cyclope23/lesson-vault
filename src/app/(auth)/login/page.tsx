@@ -26,7 +26,7 @@ export default function LoginPage() {
             La piattaforma per la didattica intelligente
           </h1>
           <p className="text-lg text-primary-foreground/80">
-            Carica i tuoi programmi, genera lezioni strutturate con l&apos;AI e condividi con il tuo istituto.
+            Carica i tuoi programmi, genera risorse didattiche con l&apos;AI e condividi con il tuo istituto.
           </p>
         </div>
         <p className="text-sm text-primary-foreground/50">

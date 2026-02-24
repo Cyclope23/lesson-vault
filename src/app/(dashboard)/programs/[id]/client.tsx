@@ -260,6 +260,7 @@ export function ProgramDetailClient({
         <ModulesEditor
           programId={program.id}
           disciplineId={program.discipline.id}
+          className={program.className}
           modules={program.modules}
           isPending={isPending}
           startTransition={startTransition}
@@ -279,6 +280,7 @@ export function ProgramDetailClient({
 function ModulesEditor({
   programId,
   disciplineId,
+  className,
   modules,
   isPending,
   startTransition,
@@ -287,6 +289,7 @@ function ModulesEditor({
 }: {
   programId: string;
   disciplineId: string;
+  className: string;
   modules: ModuleItem[];
   isPending: boolean;
   startTransition: React.TransitionStartFunction;
@@ -316,6 +319,7 @@ function ModulesEditor({
           key={mod.id}
           module={mod}
           disciplineId={disciplineId}
+          className={className}
           isPending={isPending}
           startTransition={startTransition}
           onRefresh={onRefresh}
@@ -355,6 +359,7 @@ function ModulesEditor({
 function ModuleCard({
   module: mod,
   disciplineId,
+  className,
   isPending,
   startTransition,
   onRefresh,
@@ -362,6 +367,7 @@ function ModuleCard({
 }: {
   module: ModuleItem;
   disciplineId: string;
+  className: string;
   isPending: boolean;
   startTransition: React.TransitionStartFunction;
   onRefresh: () => void;
@@ -472,6 +478,7 @@ function ModuleCard({
             key={topic.id}
             topic={topic}
             disciplineId={disciplineId}
+            className={className}
             onRefresh={onRefresh}
             aiAvailable={aiAvailable}
           />
@@ -579,11 +586,13 @@ function GenerateDialog({
 function TopicRow({
   topic,
   disciplineId,
+  className,
   onRefresh,
   aiAvailable,
 }: {
   topic: TopicItem;
   disciplineId: string;
+  className: string;
   onRefresh: () => void;
   aiAvailable: boolean;
 }) {
@@ -641,6 +650,7 @@ function TopicRow({
             description: trimmed || undefined,
             contentType: generateDialogContentType,
             disciplineId,
+            className,
           });
         } else {
           // Primary generate flow — generateTopicLesson
@@ -673,7 +683,7 @@ function TopicRow({
     startTransition(async () => {
       try {
         await deleteTopicLesson(topic.id);
-        toast.success("Lezione eliminata!");
+        toast.success("Risorsa eliminata!");
         onRefresh();
       } catch (error: any) {
         toast.error(error.message);

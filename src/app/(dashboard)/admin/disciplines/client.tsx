@@ -148,7 +148,7 @@ export function DisciplinesClient({ disciplines }: DisciplinesClientProps) {
               <TableHead>Descrizione</TableHead>
               <TableHead>Docenti</TableHead>
               <TableHead>Programmi</TableHead>
-              <TableHead>Lezioni</TableHead>
+              <TableHead>Risorse</TableHead>
               <TableHead>Creata</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>

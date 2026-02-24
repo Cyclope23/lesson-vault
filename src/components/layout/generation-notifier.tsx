@@ -43,7 +43,7 @@ export function GenerationNotifier({
           notifiedRef.current.delete(lesson.id);
           toast.success(`"${lesson.title}" generata!`, {
             action: {
-              label: "Vai alla lezione",
+              label: "Vai alla risorsa",
               onClick: () => router.push(`/lessons/${lesson.id}`),
             },
             duration: 10000,

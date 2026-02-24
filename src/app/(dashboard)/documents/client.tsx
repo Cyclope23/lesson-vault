@@ -179,7 +179,7 @@ export function DocumentsClient({ documents, disciplines, defaultDisciplineId }:
               <TableHead>Tipo</TableHead>
               <TableHead>Dimensione</TableHead>
               <TableHead>Stato</TableHead>
-              <TableHead>Lezioni</TableHead>
+              <TableHead>Risorse</TableHead>
               <TableHead>Caricato</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>

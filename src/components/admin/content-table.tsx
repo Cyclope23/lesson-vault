@@ -138,7 +138,7 @@ export function ContentTable({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tutti i tipi</SelectItem>
-            <SelectItem value="lesson">Lezioni</SelectItem>
+            <SelectItem value="lesson">Risorse</SelectItem>
             <SelectItem value="program">Programmi</SelectItem>
           </SelectContent>
         </Select>
@@ -220,7 +220,7 @@ export function ContentTable({
               <TableRow key={`${item._type}-${item.id}`}>
                 <TableCell>
                   <Badge variant="outline">
-                    {item._type === "lesson" ? "Lezione" : "Programma"}
+                    {item._type === "lesson" ? "Risorsa" : "Programma"}
                   </Badge>
                 </TableCell>
                 <TableCell className="font-medium">{item.title}</TableCell>

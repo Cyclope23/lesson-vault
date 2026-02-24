@@ -24,9 +24,9 @@ export default async function LessonsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Lezioni</h1>
+      <h1 className="text-2xl font-bold">Risorse</h1>
       <p className="mt-2 mb-6 text-muted-foreground">
-        Gestisci e consulta le lezioni.
+        Gestisci e consulta le risorse didattiche.
       </p>
       <LessonsClient
         lessons={JSON.parse(JSON.stringify(lessons))}

@@ -66,3 +66,21 @@ docker compose up db   # PostgreSQL only
 - `src/services/` — Business logic (AI, extraction, etc.)
 - `src/types/` — TypeScript interfaces
 - `prisma/` — Schema, migrations, seed
+
+Add under a ## UI Implementation section at the top level of CLAUDE.md\n\nWhen implementing UI features, ensure changes are applied to ALL relevant pages/views where the feature should appear, not just one location. Search the codebase for all instances before considering the task complete.
+Add under a ## Docker / Deployment section in CLAUDE.md\n\nAfter making code changes, always run `docker compose build --no-cache && docker compose up -d` for deployment. 
+
+Docker layer caching frequently causes new code not to appear. Never use cached builds when verifying changes.
+Add under a ## Tech Stack & Known Gotchas section near the top of CLAUDE.md\n\nThis project uses TypeScript, Next.js (with server actions), Prisma ORM, and Radix UI components. 
+
+Key constraints:
+- Do NOT test Next.js server actions via curl — they don't work that way. Use direct DB manipulation or the actual UI.
+- When adding Prisma schema columns to existing tables, always provide a default value for non-nullable fields.
+- Be aware of Prisma 7 breaking changes: Edge middleware cannot import PrismaClient directly, PrismaClient constructor requires an adapter, and corrupted node_modules may need full reinstall.
+- Next.js page caching can hide new data; use revalidatePath or dynamic rendering where needed.
+- Radix UI DropdownMenu has modal conflicts with Dialog — if embedding a Dialog trigger inside a 
+
+DropdownMenuItem, handle the modal prop or use a different pattern.
+
+Add under a ## Safety Rules section at the very top of CLAUDE.md\n\nNEVER delete the current working directory or any parent directory of the working directory. If you need to clone a repo into the current directory, use `git clone <url> .` or a temporary directory approach instead.
+Add under a ## AI Content Generation section in CLAUDE.md\n\nWhen generating AI content (e.g., lesson generation), ensure JSON responses are clean — never wrap them in markdown code fences. Handle max_tokens truncation gracefully by checking for incomplete JSON and retrying or streaming. Use isolated loading states per item (not shared useTransition across multiple buttons).

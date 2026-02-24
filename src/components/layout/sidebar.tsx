@@ -35,14 +35,14 @@ const AI_LINKS = new Set(["/generate"]);
 const teacherLinks = [
   { href: "/programs", label: "Programmi", icon: FolderOpen },
   { href: "/generate", label: "Nuovo contenuto", icon: PenLine },
-  { href: "/lessons", label: "Lezioni", icon: BookOpen },
+  { href: "/lessons", label: "Risorse", icon: BookOpen },
   { href: "/documents", label: "Documenti", icon: Upload },
   { href: "/settings", label: "Impostazioni", icon: Settings },
 ];
 
 const adminLinks = [
   { href: "/programs", label: "Programmi", icon: FolderOpen },
-  { href: "/lessons", label: "Lezioni", icon: BookOpen },
+  { href: "/lessons", label: "Risorse", icon: BookOpen },
   { href: "/admin/approvals", label: "Approvazioni", icon: CheckSquare },
   { href: "/admin/content", label: "Contenuti", icon: LayoutDashboard },
   { href: "/admin/disciplines", label: "Discipline", icon: GraduationCap },

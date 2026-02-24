@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Lesson Vault",
-  description: "Piattaforma per la gestione e generazione di lezioni scolastiche",
+  description: "Piattaforma per la gestione e generazione di risorse didattiche",
 };
 
 export default function RootLayout({

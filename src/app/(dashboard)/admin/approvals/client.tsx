@@ -50,7 +50,7 @@ export function ApprovalsClient({ lessons, programs }: ApprovalsClientProps) {
     <Tabs defaultValue="lessons">
       <TabsList>
         <TabsTrigger value="lessons">
-          Lezioni {lessons.length > 0 && `(${lessons.length})`}
+          Risorse {lessons.length > 0 && `(${lessons.length})`}
         </TabsTrigger>
         <TabsTrigger value="programs">
           Programmi {programs.length > 0 && `(${programs.length})`}
@@ -61,7 +61,7 @@ export function ApprovalsClient({ lessons, programs }: ApprovalsClientProps) {
           items={lessons}
           onApprove={handleApproveLesson}
           onReject={handleRejectLesson}
-          emptyMessage="Nessuna lezione in attesa di approvazione."
+          emptyMessage="Nessuna risorsa in attesa di approvazione."
         />
       </TabsContent>
       <TabsContent value="programs">

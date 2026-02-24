@@ -24,6 +24,13 @@ import {
 import { CONTENT_TYPE_LABELS } from "@/types/lesson";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Send,
   Lock,
   RefreshCw,
@@ -81,6 +88,8 @@ export function LessonsClient({
 }: LessonsClientProps) {
   const defaultFilter = role === "ADMIN" ? "all" : "mine";
   const [filter, setFilter] = useState<"mine" | "all">(defaultFilter);
+  const [classFilter, setClassFilter] = useState<string>("all");
+  const [contentTypeFilter, setContentTypeFilter] = useState<string>("all");
   const [view, setView] = useState<"list" | "tree">("list");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -103,20 +112,25 @@ export function LessonsClient({
     startTransition(async () => {
       try {
         await deleteLesson(id);
-        toast.success("Lezione eliminata!");
+        toast.success("Risorsa eliminata!");
         router.refresh();
       } catch (error: any) {
         toast.error(
-          error.message || "Errore nell'eliminazione della lezione."
+          error.message || "Errore nell'eliminazione della risorsa."
         );
       }
     });
   }
 
-  const filteredLessons =
+  const uniqueClasses = [...new Set(lessons.map((l) => l.className).filter(Boolean))].sort() as string[];
+  const uniqueContentTypes = [...new Set(lessons.map((l) => l.contentType))].sort();
+
+  let filteredLessons =
     filter === "mine"
       ? lessons.filter((l) => l.teacher.id === currentUserId)
       : lessons;
+  if (classFilter !== "all") filteredLessons = filteredLessons.filter((l) => l.className === classFilter);
+  if (contentTypeFilter !== "all") filteredLessons = filteredLessons.filter((l) => l.contentType === contentTypeFilter);
 
   return (
     <div className="space-y-4">
@@ -152,13 +166,43 @@ export function LessonsClient({
             </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        {uniqueClasses.length > 0 && (
+          <Select value={classFilter} onValueChange={setClassFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Classe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tutte le classi</SelectItem>
+              {uniqueClasses.map((cls) => (
+                <SelectItem key={cls} value={cls}>
+                  {cls}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select value={contentTypeFilter} onValueChange={setContentTypeFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Tipologia" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tutte le tipologie</SelectItem>
+            {uniqueContentTypes.map((ct) => (
+              <SelectItem key={ct} value={ct}>
+                {CONTENT_TYPE_LABELS[ct] || ct}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {filteredLessons.length === 0 ? (
         <p className="py-8 text-center text-muted-foreground">
           {filter === "mine"
-            ? "Non hai ancora nessuna lezione."
-            : "Nessuna lezione disponibile."}
+            ? "Non hai ancora nessuna risorsa."
+            : "Nessuna risorsa disponibile."}
         </p>
       ) : view === "list" ? (
         <LessonsTable
