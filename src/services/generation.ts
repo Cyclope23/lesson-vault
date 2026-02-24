@@ -29,6 +29,8 @@ const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   ESERCITAZIONE_LABORATORIO: "Esercitazione di laboratorio",
   COMPITO_IN_CLASSE: "Compito in classe",
   APPROFONDIMENTO: "Approfondimento",
+  ESERCIZIO_GUIDATO: "Esercizio guidato",
+  MAPPA_CONCETTUALE: "Mappa concettuale",
 };
 
 function buildPrompt(params: {
@@ -58,6 +60,8 @@ function buildPrompt(params: {
 
   const sectionGuidance = getSectionGuidance(contentType);
 
+  const isMindMap = contentType === "MAPPA_CONCETTUALE";
+
   context += `\n\n${sectionGuidance}
 
 Rispondi SOLO con un JSON valido nel seguente formato, senza markdown o altro testo:
@@ -75,7 +79,30 @@ Rispondi SOLO con un JSON valido nel seguente formato, senza markdown o altro te
   "prerequisites": ["Prerequisito 1"],
   "estimatedDuration": 60,
   "targetGrade": "Classe target (es. 3a superiore)",
-  "keywords": ["parola1", "parola2"]
+  "keywords": ["parola1", "parola2"]${isMindMap ? `,
+  "mindMap": {
+    "root": {
+      "id": "root",
+      "label": "Concetto centrale",
+      "description": "Definizione sintetica",
+      "explanation": "Spiegazione dettagliata in markdown con esempi",
+      "children": [
+        {
+          "id": "branch-1",
+          "label": "Ramo",
+          "description": "Definizione sintetica",
+          "explanation": "Spiegazione approfondita con esempi pratici in markdown",
+          "color": "#3B82F6",
+          "children": [
+            { "id": "sub-1-1", "label": "Sotto-nodo", "description": "Definizione", "explanation": "Spiegazione con esempio" }
+          ]
+        }
+      ]
+    },
+    "crossLinks": [
+      { "fromId": "id-nodo-1", "toId": "id-nodo-2", "label": "relazione" }
+    ]
+  }` : ""}
 }
 
 Regole:
@@ -85,7 +112,8 @@ Regole:
 - Ordine sezioni da 0
 - estimatedDuration in minuti
 - Contenuto adatto a un contesto scolastico italiano
-- Sii completo ma conciso: evita ripetizioni e frasi di riempimento, vai dritto ai concetti`;
+- Sii completo ma conciso: evita ripetizioni e frasi di riempimento, vai dritto ai concetti${isMindMap ? `
+- Il campo "mindMap" è OBBLIGATORIO per questo tipo di contenuto` : ""}`;
 
   return context;
 }
@@ -138,6 +166,58 @@ function getSectionGuidance(contentType: ContentType): string {
 - deepening: aspetti avanzati, collegamenti interdisciplinari
 - example: casi studio o esempi concreti
 - summary: conclusioni e spunti per ulteriori ricerche`;
+
+    case "ESERCIZIO_GUIDATO":
+      return `Struttura l'esercizio guidato con:
+- introduction: presentazione dell'esercizio, obiettivi di apprendimento e prerequisiti necessari
+- explanation: richiamo teorico essenziale per affrontare l'esercizio
+- exercise: esercizio suddiviso in step guidati (usa più sezioni exercise). Ogni step deve includere: il compito da svolgere, suggerimenti pratici, una checklist di verifica e domande intermedie che accompagnano lo studente verso la soluzione senza rivelarla direttamente
+- summary: soluzione completa commentata passo-passo e punti chiave di apprendimento`;
+
+    case "MAPPA_CONCETTUALE":
+      return `Genera una mappa concettuale strutturata. DEVI includere il campo "mindMap" nel JSON di risposta.
+
+Il campo "mindMap" deve avere questa struttura:
+{
+  "root": {
+    "id": "root",
+    "label": "Concetto centrale (2-5 parole)",
+    "description": "Breve descrizione del concetto centrale (1-2 frasi)",
+    "explanation": "Spiegazione dettagliata del concetto in markdown, con definizione, contesto ed esempi pratici. Può essere lunga 3-8 righe.",
+    "children": [
+      {
+        "id": "branch-1",
+        "label": "Ramo principale",
+        "description": "Definizione sintetica (1-2 frasi)",
+        "explanation": "Spiegazione approfondita in markdown con:\\n- Definizione del concetto\\n- Come si collega al tema centrale\\n- **Esempio concreto** o caso pratico\\n- Eventuali formule, regole o principi chiave",
+        "color": "#3B82F6",
+        "children": [
+          {
+            "id": "sub-1-1",
+            "label": "Sotto-concetto",
+            "description": "Definizione sintetica",
+            "explanation": "Spiegazione con esempio pratico"
+          }
+        ]
+      }
+    ]
+  },
+  "crossLinks": [
+    { "fromId": "sub-1-1", "toId": "sub-2-1", "label": "relazione trasversale" }
+  ]
+}
+
+Regole per mindMap:
+- 3-6 rami principali (children del root)
+- 2-4 sotto-nodi per ramo (max 3 livelli di profondità)
+- Ogni nodo ha: id unico (kebab-case), label (2-5 parole), description (1-2 frasi), explanation (spiegazione ricca in markdown)
+- Il campo "explanation" è FONDAMENTALE: deve contenere la spiegazione didattica completa del concetto, con definizioni, esempi pratici, formule se pertinenti, e collegamenti. Usa markdown (grassetto, elenchi, codice). Lo studente cliccherà sul nodo per leggere questa spiegazione.
+- Colori hex diversi per ogni ramo principale (scegli tra: #3B82F6, #10B981, #F59E0B, #EF4444, #8B5CF6, #EC4899, #06B6D4, #F97316)
+- crossLinks: 2-4 relazioni trasversali (causa-effetto, analogie, prerequisiti)
+
+Per le sezioni testo (fallback testuale della mappa):
+- introduction: argomento centrale e guida alla lettura
+- summary: sintesi delle relazioni chiave e percorsi di studio suggeriti`;
   }
 }
 

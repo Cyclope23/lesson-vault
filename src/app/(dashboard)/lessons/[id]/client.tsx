@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -50,12 +50,15 @@ import {
   RefreshCw,
   AlertCircle,
   Download,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   ApprovalStatusBadge,
   VisibilityBadge,
 } from "@/components/admin/approval-list";
+import { MindMapView, type MindMapViewHandle } from "@/components/mind-map/mind-map-view";
+import { svgToPngBlob } from "@/components/mind-map/export-utils";
 
 const SECTION_TYPES = [
   { value: "introduction", label: "Introduzione" },
@@ -225,6 +228,7 @@ function LessonEditor({
   const [content, setContent] = useState<LessonContent>(lesson.content);
   const [hasChanges, setHasChanges] = useState(false);
   const [mode, setMode] = useState<"read" | "edit">(isOwner ? "edit" : "read");
+  const mindMapRef = useRef<MindMapViewHandle>(null);
 
   function markChanged() {
     setHasChanges(true);
@@ -410,7 +414,11 @@ function LessonEditor({
               )}
             </TabsList>
           </Tabs>
-          <ExportDropdown lessonId={lesson.id} />
+          <ExportDropdown
+            lessonId={lesson.id}
+            contentType={lesson.contentType}
+            mindMapRef={mindMapRef}
+          />
           {isOwner && mode === "edit" && hasChanges && (
             <Button onClick={handleSave} disabled={isPending}>
               {isPending ? (
@@ -457,6 +465,7 @@ function LessonEditor({
           teacher={lesson.teacher}
           discipline={lesson.discipline}
           contentType={lesson.contentType}
+          mindMapRef={mindMapRef}
         />
       ) : (
         /* ===== EDIT MODE ===== */
@@ -683,6 +692,7 @@ function ReadingView({
   teacher,
   discipline,
   contentType,
+  mindMapRef,
 }: {
   title: string;
   description: string;
@@ -692,6 +702,7 @@ function ReadingView({
   teacher: { firstName: string; lastName: string };
   discipline: { name: string };
   contentType: string;
+  mindMapRef?: React.RefObject<MindMapViewHandle | null>;
 }) {
   return (
     <article className="mx-auto max-w-3xl space-y-8">
@@ -760,6 +771,11 @@ function ReadingView({
         </Card>
       )}
 
+      {/* Mind Map — only for MAPPA_CONCETTUALE with mindMap data */}
+      {contentType === "MAPPA_CONCETTUALE" && content.mindMap && (
+        <MindMapView ref={mindMapRef} data={content.mindMap} />
+      )}
+
       <Separator />
 
       {/* Sections — flowing document */}
@@ -800,8 +816,17 @@ function ReadingView({
 
 // ===== Export dropdown =====
 
-function ExportDropdown({ lessonId }: { lessonId: string }) {
+function ExportDropdown({
+  lessonId,
+  contentType,
+  mindMapRef,
+}: {
+  lessonId: string;
+  contentType: string;
+  mindMapRef: React.RefObject<MindMapViewHandle | null>;
+}) {
   const [loading, setLoading] = useState(false);
+  const isMindMap = contentType === "MAPPA_CONCETTUALE";
 
   async function handleExport(format: "md" | "docx") {
     setLoading(true);
@@ -816,16 +841,59 @@ function ExportDropdown({ lessonId }: { lessonId: string }) {
       const fileNameMatch = disposition.match(/filename="(.+)"/);
       const fileName = fileNameMatch?.[1] || `lezione.${format}`;
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, fileName);
     } catch (error: any) {
       toast.error(error.message || "Errore nel download");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleExportPng() {
+    const svg = mindMapRef.current?.getSvgElement();
+    if (!svg) {
+      toast.error("Mappa non disponibile");
+      return;
+    }
+    setLoading(true);
+    try {
+      const blob = await svgToPngBlob(svg);
+      downloadBlob(blob, "mappa-concettuale.png");
+    } catch {
+      toast.error("Errore nell'esportazione PNG");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleExportDocxWithMap() {
+    const svg = mindMapRef.current?.getSvgElement();
+    if (!svg) {
+      // Fall back to normal DOCX export
+      return handleExport("docx");
+    }
+    setLoading(true);
+    try {
+      const blob = await svgToPngBlob(svg);
+      const base64 = await blobToBase64(blob);
+
+      const res = await fetch(`/api/lessons/${lessonId}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mindMapImage: base64 }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Errore nel download");
+      }
+      const docxBlob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const fileNameMatch = disposition.match(/filename="(.+)"/);
+      const fileName = fileNameMatch?.[1] || "mappa-concettuale.docx";
+
+      downloadBlob(docxBlob, fileName);
+    } catch (error: any) {
+      toast.error(error.message || "Errore nell'esportazione DOCX");
     } finally {
       setLoading(false);
     }
@@ -847,12 +915,44 @@ function ExportDropdown({ lessonId }: { lessonId: string }) {
         <DropdownMenuItem onClick={() => handleExport("md")}>
           Markdown (.md)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleExport("docx")}>
+        <DropdownMenuItem
+          onClick={() => (isMindMap ? handleExportDocxWithMap() : handleExport("docx"))}
+        >
           Word (.docx)
         </DropdownMenuItem>
+        {isMindMap && (
+          <DropdownMenuItem onClick={handleExportPng}>
+            <ImageIcon className="mr-2 h-4 w-4" />
+            PNG (Mappa)
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Strip data URL prefix to get raw base64
+      resolve(result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 // ===== Markdown renderer =====

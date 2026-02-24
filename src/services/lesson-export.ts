@@ -3,6 +3,7 @@ import {
   Packer,
   Paragraph,
   TextRun,
+  ImageRun,
   HeadingLevel,
   AlignmentType,
   BorderStyle,
@@ -92,6 +93,7 @@ export function lessonToMarkdown(data: LessonExportData): string {
 
 export async function lessonToDocx(
   data: LessonExportData,
+  mindMapPng?: Buffer,
 ): Promise<Buffer> {
   const { title, description, contentType, content, teacher, discipline } = data;
   const children: Paragraph[] = [];
@@ -113,6 +115,26 @@ export async function lessonToDocx(
     children.push(metaParagraph("Classe", content.targetGrade));
   }
   children.push(new Paragraph({ text: "" }));
+
+  // Mind map image (before sections)
+  if (mindMapPng) {
+    children.push(
+      new Paragraph({ text: "Mappa concettuale", heading: HeadingLevel.HEADING_2 }),
+    );
+    children.push(
+      new Paragraph({
+        children: [
+          new ImageRun({
+            data: mindMapPng,
+            transformation: { width: 600, height: 400 },
+            type: "png",
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+      }),
+    );
+    children.push(new Paragraph({ text: "" }));
+  }
 
   // Description
   if (description) {

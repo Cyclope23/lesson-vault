@@ -6,6 +6,8 @@ export const CONTENT_TYPE_LABELS: Record<string, string> = {
   ESERCITAZIONE_LABORATORIO: "Esercitazione di laboratorio",
   COMPITO_IN_CLASSE: "Compito in classe",
   APPROFONDIMENTO: "Approfondimento",
+  ESERCIZIO_GUIDATO: "Esercizio guidato",
+  MAPPA_CONCETTUALE: "Mappa concettuale",
 };
 
 export const CONTENT_TYPES = [
@@ -16,7 +18,23 @@ export const CONTENT_TYPES = [
   "ESERCITAZIONE_LABORATORIO",
   "COMPITO_IN_CLASSE",
   "APPROFONDIMENTO",
+  "ESERCIZIO_GUIDATO",
+  "MAPPA_CONCETTUALE",
 ] as const;
+
+export interface MindMapNode {
+  id: string;
+  label: string;
+  description?: string;
+  explanation?: string;  // rich markdown: spiegazione dettagliata con esempi
+  color?: string;
+  children?: MindMapNode[];
+}
+
+export interface MindMapData {
+  root: MindMapNode;
+  crossLinks?: { fromId: string; toId: string; label: string }[];
+}
 
 export interface LessonContent {
   sections: LessonSection[];
@@ -25,6 +43,7 @@ export interface LessonContent {
   estimatedDuration: number;
   targetGrade: string;
   keywords: string[];
+  mindMap?: MindMapData;
 }
 
 export const SECTION_TYPE_LABELS: Record<string, string> = {
